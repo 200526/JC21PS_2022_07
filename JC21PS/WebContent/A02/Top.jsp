@@ -1,14 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <jsp:useBean id="messageBean" class="jp.co.jcps.Bean.MessageBean" scope="request" />
-<jsp:useBean id="bean" class="jp.co.jcps.Bean.TopBean" scope="request" />
+<jsp:useBean id="bean" class="jp.co.jcps.A02.TopBean" scope="request" />
 
 <link rel="stylesheet" type="text/css" href="/JC21PS/css/common.css" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="css/bootstrap.min.css" rel="stylesheet">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
 <!DOCTYPE html>
 <html>
 <head>
@@ -34,6 +32,7 @@
   <form action="/JC21PS/TopSave" method="POST">
   <%
  	for(int i = 0; i < bean.getClubActivityList().size(); i++){
+ 		out.println("<div style='margin:auto; width:90%'>");
  		out.println("<h2>" + bean.getClubNameList().get(i) + "</h2>");
  		out.println("<table class='table table-bordered' style='table-layout:fixed'>");
  		out.println("<tbody>");
@@ -55,7 +54,7 @@
  			int no = j+1;
  			out.println("<tr>");
  			out.println("<td rowspan=3 colspan=1>" + no + "</td>");
-     		out.println("<td colspan=4>" + bean.getClubActivityList().get(i).get(j).getActivityName() + "</td>");
+     		out.println("<td colspan=4><a href='/JC21PS/ParticipantListController?activityId=" + bean.getClubActivityList().get(i).get(j).getActivityId() +"'>" + bean.getClubActivityList().get(i).get(j).getActivityName() + "</td>");
      		if(bean.getClubActivityList().get(i).get(j).getIsParticipationFlg()){
      			out.println("<td rowspan=3>参加</br></br></br></br><button type='submit' name='activityId' value='" + bean.getClubActivityList().get(i).get(j).getActivityId() + "'/>不参加にする</td>");
 
@@ -80,6 +79,7 @@
  		}
  		out.println("<tbody>");
  		out.println("</table>");
+ 		out.println("</div>");
  		out.println("</br></br>");
  	}
  %>

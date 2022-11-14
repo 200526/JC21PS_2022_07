@@ -1,7 +1,6 @@
-package jp.co.jcps.A03;
+package jp.co.jcps.A07;
 
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,16 +14,16 @@ import jp.co.jcps.Common.CommonCheck;
 import jp.co.jcps.Common.DBConnection;
 
 /**
- * 活動登録画面のコントローラー
+ * 部活情報登録画面のコントローラー
  */
-@WebServlet("/RegisterActivityController")
-public class RegisterActivityControllerServlet extends HttpServlet {
+@WebServlet("/ClubInfoRegisterController")
+public class ClubInfoRegisterControllerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * コンストラクタ
 	 */
-	public RegisterActivityControllerServlet() {
+	public ClubInfoRegisterControllerServlet() {
 		super();
 	}
 
@@ -40,43 +39,46 @@ public class RegisterActivityControllerServlet extends HttpServlet {
 		}
 
 		// セッションからログイン中のユーザーの部長クラブIDを取得する
-		String leaderClubId = (String) request.getSession().getAttribute("leaderClubId");
+		// TODO: セッション（ログインユーザーの情報を保持している）からログインユーザーの部長を務める部活の部活IDを取得する。
 
-		// SQLに埋め込むパラメータリストを定義
+
+		// TODO:SQLを宣言
+
+
+		// TODO: SQLに埋め込むパラメータリストを定義
 		List<String> paramList = new ArrayList<String>();
-		paramList.add(leaderClubId);
 
-		// SQLを設定
-		String sql = "SELECT club_name FROM mst_club WHERE club_id = ?;";
 
 		// DB接続を初期化
 		DBConnection db = new DBConnection();
 
-		// 活動登録画面のBeanを初期化
-		RegisterActivityBean bean = new RegisterActivityBean();
+		// 部活情報登録画面のBeanを初期化
+		ClubInfoRegisterBean bean = new ClubInfoRegisterBean();
 
 		try {
-			// SQLを実行し結果を取得
-			ResultSet rs = db.executeSelectQuery(sql, paramList);
-			// beanに部活名をセット
+			// TODO; DBから情報を取得
+
 			while (rs.next()) {
-				bean.setClubName(rs.getString("club_name"));
+				// TODO: beanにDBから取得した値をセット
+
+
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			throw new ServletException(e);
+			request.getRequestDispatcher("ERROR/Error.jsp").forward(request, response);
 		} finally {
 			try {
 				db.close();
 			} catch (Exception e) {
+				System.out.println(e.getMessage());
 			}
 		}
 
 		// beanをリクエストにセット
 		request.setAttribute("bean", bean);
 
-		// 履修講義一覧画面を表示
-		request.getRequestDispatcher("A03/RegisterActivity.jsp").forward(request, response);
+		// 部活情報登録画面を表示
+		request.getRequestDispatcher("A07/ClubInfoRegister.jsp").forward(request, response);
 	}
 
 }

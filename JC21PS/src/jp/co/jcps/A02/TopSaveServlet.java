@@ -31,9 +31,10 @@ public class TopSaveServlet extends HttpServlet {
 	/**
 	 * POSTでリクエストされた場合の処理
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		// 共通チェック
-		if(!CommonCheck.existSession(request)) {
+		if (!CommonCheck.existSession(request)) {
 			// セッションが切れてる場合はログイン画面に遷移
 			request.getRequestDispatcher("/Login").forward(request, response);
 		}
@@ -49,32 +50,36 @@ public class TopSaveServlet extends HttpServlet {
 		paramList.add(updateActivityId);
 		paramList.add(userId);
 
-
 		// SQLを設定
 		String sql = "SELECT * FROM trn_participant WHERE activity_id = ? AND user_id = ?; ";
 
 		// SQLを実行し結果を取得
 		DBConnection db = new DBConnection();
-		ResultSet rs = db.executeSelectQuery(sql, paramList);
-
+		ResultSet rs = null;
+		try {
+			rs = db.executeSelectQuery(sql, paramList);
+		} catch (Exception e1) {
+			request.getRequestDispatcher("ERROR/Error.jsp").forward(request, response);
+		}
 
 		try {
 			// 参加者データの有無をチェック
-			if(rs.next()) {
+			if (rs.next()) {
 				// データがない場合はinsert(参加にする）
 				deleteTrnParticipant(paramList);
-			}else {
+			} else {
 				// データがある場合はdelete(不参加にする）
 				insertTrnParticipant(paramList);
 			}
 
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			throw new ServletException(e);
+			request.getRequestDispatcher("ERROR/Error.jsp").forward(request, response);
 		} finally {
 			try {
 				db.close();
 			} catch (Exception e) {
+				System.out.println(e.getMessage());
 			}
 		}
 
@@ -82,7 +87,7 @@ public class TopSaveServlet extends HttpServlet {
 		request.getRequestDispatcher("/TopController").forward(request, response);
 	}
 
-	private void insertTrnParticipant(List<String> paramList) {
+	private void insertTrnParticipant(List<String> paramList) throws Exception {
 		// インサートするSQL
 		String sql = "INSERT INTO trn_participant VALUES (?,?);";
 
@@ -91,7 +96,7 @@ public class TopSaveServlet extends HttpServlet {
 		db.executeInsertUpdateQuery(sql, paramList);
 	}
 
-	private void deleteTrnParticipant(List<String> paramList) {
+	private void deleteTrnParticipant(List<String> paramList) throws Exception {
 		// デリートするSQL
 		String sql = "DELETE FROM trn_participant WHERE activity_id = ? AND user_id = ?;";
 

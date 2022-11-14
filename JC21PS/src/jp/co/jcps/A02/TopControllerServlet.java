@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import jp.co.jcps.Bean.ActivityBean;
-import jp.co.jcps.Bean.TopBean;
 import jp.co.jcps.Common.CommonCheck;
 import jp.co.jcps.Common.DBConnection;
 import jp.co.jcps.Common.Utils;
@@ -37,9 +36,10 @@ public class TopControllerServlet extends HttpServlet {
 	/**
 	 * GETメソッドでリクエストされた場合の処理
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		// 共通チェック
-		if(!CommonCheck.existSession(request)) {
+		if (!CommonCheck.existSession(request)) {
 			// セッションが切れてる場合はログイン画面に遷移
 			request.getRequestDispatcher("/Login").forward(request, response);
 		}
@@ -55,10 +55,8 @@ public class TopControllerServlet extends HttpServlet {
 		// SQLを設定
 		String sql = "SELECT activity.*,club.club_id,club.club_name,count.count,isnull(participant.user_id) != 1 as participation_flg FROM trn_activity as activity INNER JOIN mst_club as club USING(club_id) INNER JOIN trn_club_member as member ON club.club_id = member.club_id LEFT JOIN (SELECT activity_id,count(*) as count FROM trn_participant GROUP BY activity_id) as count ON count.activity_id = activity.activity_id LEFT JOIN trn_participant as participant ON participant.user_id = ? AND participant.activity_id = activity.activity_id WHERE member.user_id = ? AND activity.activity_start_time > now() ORDER BY club.club_id ASC,activity.activity_start_time ASC;";
 
-		// SQLを実行し結果を取得
+		// DB接続を初期化
 		DBConnection db = new DBConnection();
-		ResultSet rs = db.executeSelectQuery(sql, paramList);
-
 
 		// 比較用の部活ID
 		String tmpClubId = null;
@@ -72,16 +70,17 @@ public class TopControllerServlet extends HttpServlet {
 		TopBean bean = new TopBean();
 
 		try {
-
+			// SQLを実行し結果を取得
+			ResultSet rs = db.executeSelectQuery(sql, paramList);
 			// リストにDBから取得した値をセット
-			while(rs.next()) {
+			while (rs.next()) {
 				ActivityBean activity = new ActivityBean();
 
-				if(exeCount == 0) {
+				if (exeCount == 0) {
 					// 初回は必ず退避
 					tmpClubId = rs.getString("club_id");
 					bean.addClubNameList(rs.getString("club_name"));
-				}else if (!tmpClubId.equals(rs.getString("club_id"))) {
+				} else if (!tmpClubId.equals(rs.getString("club_id"))) {
 					// 以降はclub_idが変わったときだけ更新
 					tmpClubId = rs.getString("club_id");
 
@@ -98,12 +97,14 @@ public class TopControllerServlet extends HttpServlet {
 				activity.setActivityName(rs.getString("activity_name"));
 				activity.setActivityPlace(rs.getString("activity_place"));
 				activity.setDispActivityDate(Utils.getYYYYMMDD(rs.getTimestamp("activity_start_time")));
-				activity.setDispActivityTime(Utils.getDispActivityTimeString(rs.getTimestamp("activity_start_time"), rs.getTimestamp("activity_end_time")));
+				activity.setDispActivityTime(Utils.getDispActivityTimeString(rs.getTimestamp("activity_start_time"),
+						rs.getTimestamp("activity_end_time")));
 				activity.setActivityDescription(rs.getString("activity_description"));
 				activity.setParticipantsCount(rs.getInt("count"));
-				activity.setMaxParticipant(StringUtils.isEmpty(rs.getString("max_participant")) ? "-" : rs.getString("max_participant"));
+				activity.setMaxParticipant(
+						StringUtils.isEmpty(rs.getString("max_participant")) ? "-" : rs.getString("max_participant"));
 				activity.setIsParticipationFlg(rs.getBoolean("participation_flg"));
-				activity.setIsMajorityFlg(isMajority(rs.getInt("count"),rs.getString("max_participant")));
+				activity.setIsMajorityFlg(isMajority(rs.getInt("count"), rs.getString("max_participant")));
 
 				// 活動リストに活動を追加
 				activityList.add(activity);
@@ -112,24 +113,24 @@ public class TopControllerServlet extends HttpServlet {
 				exeCount++;
 			}
 			// 最後の活動リストを部活リストに追加
-			if(activityList.size() != 0) {
+			if (activityList.size() != 0) {
 				clubList.add(activityList);
 			}
 
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			throw new ServletException(e);
+			request.getRequestDispatcher("ERROR/Error.jsp").forward(request, response);
 		} finally {
 			try {
 				db.close();
 			} catch (Exception e) {
+				System.out.println(e.getMessage());
 			}
 		}
 
 		// トップ画面のBeanにリストをセットし、リクエストにセット
 		bean.setClubActivityList(clubList);
 		request.setAttribute("bean", bean);
-
 
 		// 履修講義一覧画面を表示
 		request.getRequestDispatcher("A02/Top.jsp").forward(request, response);
@@ -138,7 +139,8 @@ public class TopControllerServlet extends HttpServlet {
 	/**
 	 * POSTでリクエストされた場合の処理
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		doGet(request, response);
 	}
 
@@ -149,7 +151,7 @@ public class TopControllerServlet extends HttpServlet {
 	 */
 	private boolean isMajority(Integer participant, String maxParticipant) {
 		// 空もしくはnullの場合はfalseを返却
-		if(StringUtils.isEmpty(maxParticipant)) {
+		if (StringUtils.isEmpty(maxParticipant)) {
 			return false;
 		}
 		BigDecimal num = BigDecimal.valueOf(participant);
@@ -159,12 +161,7 @@ public class TopControllerServlet extends HttpServlet {
 		BigDecimal threshold = new BigDecimal(0.5);
 
 		// 参加人数÷募集人数を計算し、過半数を超えている場合はtrueを返却
-		if(num.divide(max,2,BigDecimal.ROUND_HALF_DOWN).compareTo(threshold) >= 0) {
-			return true;
-		}else {
-			return false;
-		}
-
+		return num.divide(max, 2, BigDecimal.ROUND_HALF_DOWN).compareTo(threshold) >= 0;
 
 	}
 }

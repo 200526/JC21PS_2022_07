@@ -1,4 +1,4 @@
-package jp.co.jcps.A03;
+package jp.co.jcps.A06;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -15,16 +15,16 @@ import jp.co.jcps.Common.CommonCheck;
 import jp.co.jcps.Common.DBConnection;
 
 /**
- * 活動登録画面のコントローラー
+ * 部員登録承認のコントローラー
  */
-@WebServlet("/RegisterActivityController")
-public class RegisterActivityControllerServlet extends HttpServlet {
+@WebServlet("/JoinApprovalController")
+public class JoinApprovalControllerServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * コンストラクタ
 	 */
-	public RegisterActivityControllerServlet() {
+	public JoinApprovalControllerServlet() {
 		super();
 	}
 
@@ -42,41 +42,51 @@ public class RegisterActivityControllerServlet extends HttpServlet {
 		// セッションからログイン中のユーザーの部長クラブIDを取得する
 		String leaderClubId = (String) request.getSession().getAttribute("leaderClubId");
 
+		// SQLを設定
+		String sql = "SELECT club.club_name,usr.user_id,usr.user_name FROM trn_join_request as request INNER JOIN mst_user as usr ON usr.user_id = request.user_id INNER JOIN mst_club as club ON request.club_id = club.club_id WHERE request.club_id = ?;";
+
 		// SQLに埋め込むパラメータリストを定義
 		List<String> paramList = new ArrayList<String>();
-		paramList.add(leaderClubId);
+		/* TODO: SQLに埋め込む値をparamListに設定しなさい。
+		 * ヒント
+		 * ログインユーザーが部長を務める部活への登録申請を表示する画面。
+		 */
 
-		// SQLを設定
-		String sql = "SELECT club_name FROM mst_club WHERE club_id = ?;";
 
 		// DB接続を初期化
 		DBConnection db = new DBConnection();
 
-		// 活動登録画面のBeanを初期化
-		RegisterActivityBean bean = new RegisterActivityBean();
+		// 部員登録申請画面に表示するbeanを初期化
+		JoinApprovalBean bean = new JoinApprovalBean();
 
 		try {
 			// SQLを実行し結果を取得
 			ResultSet rs = db.executeSelectQuery(sql, paramList);
-			// beanに部活名をセット
 			while (rs.next()) {
 				bean.setClubName(rs.getString("club_name"));
+				bean.addUserIdList(rs.getString("user_id"));
+				bean.addUserNameList(rs.getString("user_name"));
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			throw new ServletException(e);
+			request.getRequestDispatcher("ERROR/Error.jsp").forward(request, response);
 		} finally {
 			try {
 				db.close();
 			} catch (Exception e) {
+				System.out.println(e.getMessage());
 			}
 		}
 
 		// beanをリクエストにセット
 		request.setAttribute("bean", bean);
 
-		// 履修講義一覧画面を表示
-		request.getRequestDispatcher("A03/RegisterActivity.jsp").forward(request, response);
+		// 部活情報登録画面を表示
+		request.getRequestDispatcher("A06/JoinApproval.jsp").forward(request, response);
 	}
 
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		doGet(request, response);
+	}
 }
